@@ -12,5 +12,11 @@ pip install -r requirements.txt
 ```bash
 datapath=/ccvl/net/ccvl15/zzhou82/PublicAbdominalData/05_KiTS
 savepath=/ccvl/net/ccvl15/ylai45/ccvl14/h5
+
+# Convert nii.gz to h5
 python niigz2h5.py --datapath $datapath --savepath $savepath
+
+# Convert h5 to nii.gz
+python h52niigz.py --datapath $datapath --savepath $savepath
+
 ```
