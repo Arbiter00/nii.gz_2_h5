@@ -7,16 +7,14 @@ def convert_nii_to_h5(nii_path, h5_path):
     # Load the .nii.gz file using nibabel
     nii_img = nib.load(nii_path)
     nii_data = nii_img.get_fdata()
-
+    
     #meta data
     nii_header = nii_img.header
     affine_matrix = nii_img.affine
     
-    
     # Save the data and header to a .h5 file
     with h5py.File(h5_path, 'w') as h5f:
-        h5f.create_dataset('nii_data', data=nii_data)
-        
+        h5f.create_dataset('nii_data', data=nii_data, compression='gzip', compression_opts=9)
          # write affine matrix to the root group
         h5f.attrs['affine_matrix'] = affine_matrix.tolist()
 
@@ -24,6 +22,7 @@ def convert_nii_to_h5(nii_path, h5_path):
         header_group = h5f.create_group('header')
         for key, value in nii_header.items():
             header_group.attrs[key] = value
+       
         
 
 def batch_convert_nii_to_h5(nii_folder, h5_folder):
@@ -37,10 +36,7 @@ def batch_convert_nii_to_h5(nii_folder, h5_folder):
                 # get nii path
                 nii_path = os.path.join(nii_folder, nii_file)
                 # h5 path
-                file_name = os.path.splitext(nii_file)[0]
-                file_name = os.path.splitext(file_name)[0]
-                h5_file = file_name + '.h5'
-                h5_path = os.path.join(h5_folder, h5_file)
+                h5_path = os.path.join(h5_folder, nii_file.replace('.nii.gz','.h5'))
                 # convert
                 print('Converting {} to {}'.format(nii_path, h5_path))
                 convert_nii_to_h5(nii_path, h5_path)
@@ -70,6 +66,12 @@ def main():
     
     batch_convert_nii_to_h5(img_path, save_img_path)
     batch_convert_nii_to_h5(label_path, save_label_path)
+    
+    
+    
+if __name__ == "__main__":
+    main()
+
     
     
     
