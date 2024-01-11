@@ -7,7 +7,8 @@ def convert_nii_to_h5(nii_path, h5_path):
     # Load the .nii.gz file using nibabel
     nii_img = nib.load(nii_path)
     nii_data = nii_img.get_fdata()
-    
+
+    #meta data
     nii_header = nii_img.header
     affine_matrix = nii_img.affine
     
