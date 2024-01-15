@@ -7,19 +7,40 @@ def convert_nii_to_h5(nii_path, h5_path):
     # Load the .nii.gz file using nibabel
     nii_img = nib.load(nii_path)
     nii_data = nii_img.get_fdata()
-    
     #meta data
     nii_header = nii_img.header
     affine_matrix = nii_img.affine
+
+    #block compress
+    block_size = (64, 64, 64)
+    img_shape = nii_data.shape
+    num_blocks = [int(np.ceil(dimension / block_size[i])) for i, dimension in enumerate(img_shape)]
     
-    # Save the data and header to a .h5 file
-    with h5py.File(h5_path, 'w') as h5f:
-        h5f.create_dataset('nii_data', data=nii_data, compression='gzip', compression_opts=9)
-         # write affine matrix to the root group
-        h5f.attrs['affine_matrix'] = affine_matrix.tolist()
+    with h5py.File(h5_path, 'w') as h5_file:
+        for i in range(num_blocks[0]):
+            for j in range(num_blocks[1]):
+                for k in range(num_blocks[2]):
+                    # calculate the start and end index of the block
+                    start_idx = (i * block_size[0], j * block_size[1], k * block_size[2])
+                    end_idx = (min((i + 1) * block_size[0], img_shape[0]),
+                            min((j + 1) * block_size[1], img_shape[1]),
+                            min((k + 1) * block_size[2], img_shape[2]))
+
+                    # the block data
+                    block_data = nii_data[start_idx[0]:end_idx[0], start_idx[1]:end_idx[1], start_idx[2]:end_idx[2]]
+
+                    # compress the block data
+                    block_data = block_data.astype(np.int16)
+                    compressed_data = lzma.compress(bytes(block_data))
+                    dataset_name = f'block_{i}_{j}_{k}'
+                    compressed_data = compressed_data[:len(compressed_data) // 2 * 2]
+                    h5_file.create_dataset(dataset_name, data=np.frombuffer(compressed_data, dtype=np.int16))
+
+        # write affine matrix to the root group
+        h5_file.attrs['affine_matrix'] = affine_matrix.tolist()
 
         # write header to the header group
-        header_group = h5f.create_group('header')
+        header_group = h5_file.create_group('header')
         for key, value in nii_header.items():
             header_group.attrs[key] = value
        
