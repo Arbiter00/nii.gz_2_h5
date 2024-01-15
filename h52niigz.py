@@ -26,9 +26,9 @@ def h5_to_nifti(h5_path, nii_path):
         for i in range(img_shape[0] // block_size[0] + 1):
             for j in range(img_shape[1] // block_size[1] + 1):
                 for k in range(img_shape[2] // block_size[2] + 1):
-                    dataset_name = f'block_{i}_{j}_{k}'
-                    if dataset_name in h5_file:
-                        compressed_data = h5_file[dataset_name][:]
+                    data_name = f'block_{i}_{j}_{k}'
+                    if data_name in h5_file:
+                        compressed_data = h5_file[data_name][:]
                         compressed_data = bytes(compressed_data)  # Convert to bytes
                         
                         # Check if compressed data is empty before decompression
