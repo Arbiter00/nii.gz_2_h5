@@ -2,6 +2,8 @@ import nibabel as nib
 import h5py
 import os
 import argparse
+import numpy as np
+import lzma
 
 def convert_nii_to_h5(nii_path, h5_path):
     # Load the .nii.gz file using nibabel
@@ -66,8 +68,8 @@ def batch_convert_nii_to_h5(nii_folder, h5_folder):
 def main():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--datapath', type=str, default='/ccvl/net/ccvl15/zzhou82/PublicAbdominalData/05_KiTS', help='path to the dataset')
-    parser.add_argument('--savepath', type=str, default='/ccvl/net/ccvl15/ylai45/ccvl14/h5', help='path to save the h5 files')
+    parser.add_argument('--datapath', type=str, default='/home/ylai/code/niigz2h5/test', help='path to the dataset')
+    parser.add_argument('--savepath', type=str, default='/home/ylai/code/niigz2h5/test_save', help='path to save the h5 files')
     
     args = parser.parse_args()
     
@@ -92,6 +94,8 @@ def main():
     
 if __name__ == "__main__":
     main()
+
+    
 
     
     
