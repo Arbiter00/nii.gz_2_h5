@@ -3,6 +3,7 @@ import h5py
 import os
 import argparse
 import numpy as np
+import lzma
 
 # transfer h5 to nii.gz
 
@@ -68,8 +69,8 @@ def batch_h5_to_nifti(h5_folder, nifti_folder):
 def main():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--datapath', type=str, default='/ccvl/net/ccvl15/ylai45/ccvl14/h5', help='path to the dataset')
-    parser.add_argument('--savepath', type=str, default='/ccvl/net/ccvl15/ylai45/ccvl14/h5', help='path to save the h5 files')
+    parser.add_argument('--datapath', type=str, default='/home/ylai/code/niigz2h5/test_save', help='path to the dataset')
+    parser.add_argument('--savepath', type=str, default='/home/ylai/code/niigz2h5/test_save', help='path to save the h5 files')
     
     args = parser.parse_args()
     
