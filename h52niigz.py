@@ -6,22 +6,50 @@ import numpy as np
 
 # transfer h5 to nii.gz
 
-def h5_to_nifti(h5_path, nifti_path):
-    with h5py.File(h5_path, 'r') as h5f:
-        data = np.array(h5f['nii_data'])
-        header_group = h5f.get('header')
-        header_dict = {key: header_group.attrs[key] for key in header_group.attrs.keys()}
-        affine_matrix = np.array(h5f.attrs['affine_matrix'])
+def h5_to_nifti(h5_path, nii_path):
+    # Load the .h5 file
+    with h5py.File(h5_path, 'r') as h5_file:
+        # Extract affine matrix from the root group
+        affine_matrix = np.array(h5_file.attrs['affine_matrix'])
 
-    header = nib.Nifti1Header()
-    for key, value in header_dict.items():
-        header[key] = value
-        
-    # Create nii image
-    nii_img = nib.Nifti1Image(data, affine=affine_matrix, header=header)
+        # Extract header information from the header group
+        nii_header = {}
+        for key, value in h5_file['header'].attrs.items():
+            nii_header[key] = value
 
-    # Save nii image
-    nib.save(nii_img, nifti_path)
+        # Reconstruct the NIfTI data from compressed blocks
+        img_shape = nii_header['dim'][1:4]
+        nii_data = np.zeros(img_shape, dtype=np.int16)
+        block_size = (64, 64, 64)
+
+        for i in range(img_shape[0] // block_size[0] + 1):
+            for j in range(img_shape[1] // block_size[1] + 1):
+                for k in range(img_shape[2] // block_size[2] + 1):
+                    dataset_name = f'block_{i}_{j}_{k}'
+                    if dataset_name in h5_file:
+                        compressed_data = h5_file[dataset_name][:]
+                        compressed_data = bytes(compressed_data)  # Convert to bytes
+                        
+                        # Check if compressed data is empty before decompression
+                        if compressed_data:
+                            decompressed_data = np.frombuffer(lzma.decompress(compressed_data), dtype=np.int16)
+
+                            # Calculate the start and end index of the block
+                            start_idx = (i * block_size[0], j * block_size[1], k * block_size[2])
+                            end_idx = (min((i + 1) * block_size[0], img_shape[0]),
+                                       min((j + 1) * block_size[1], img_shape[1]),
+                                       min((k + 1) * block_size[2], img_shape[2]))
+
+                            # Ensure decompressed data size matches block size
+                            expected_size = np.prod(np.array(end_idx) - np.array(start_idx))
+                            decompressed_data = decompressed_data[:expected_size]
+
+                            # Fill the NIfTI data with decompressed block data
+                            nii_data[start_idx[0]:end_idx[0], start_idx[1]:end_idx[1], start_idx[2]:end_idx[2]] = decompressed_data.reshape(
+                                end_idx[0] - start_idx[0], end_idx[1] - start_idx[1], end_idx[2] - start_idx[2])
+
+        # Save the reconstructed NIfTI data to a .nii.gz file
+        nib.save(nib.Nifti1Image(nii_data, affine_matrix), nii_path)
     
 def batch_h5_to_nifti(h5_folder, nifti_folder):
     # Get a list of all .h5 files in the folder
